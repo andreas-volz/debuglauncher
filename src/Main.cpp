@@ -151,7 +151,14 @@ void Main::run_process(Evasxx::Object &obj, void *event_info, Check *ck, int i)
 
     if (dbg_app.mExePtr)
     {
-      dbg_app.mExePtr->kill();
+      try
+      {
+        dbg_app.mExePtr->kill();
+      }
+      catch(Ecorexx::ProcessNotExistingException ex)
+      {
+        cerr << ex.what() << endl;
+      }
       delete dbg_app.mExePtr;
     }
   }
