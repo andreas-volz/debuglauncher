@@ -5,20 +5,23 @@
 
 #include "Preferences.h"
 
+/* forward declarations */
+class Main;
+
 class Settings : public Elmxx::Window
 {
 public:
 
-  static Settings* factory(int i);
-  static Settings* factory(Evasxx::Object &parent, int i);
+  static Settings* factory(int i, Main *mainApp);
+  static Settings* factory(Evasxx::Object &parent, int i, Main *mainApp);
 
   void newWindow();
   
   void ok_bt(Evasxx::Object &obj, void *event_info);
 
 protected:
-  Settings(const std::string &name, Elm_Win_Type type, int i);
-  Settings(Evasxx::Object &parent, const std::string &name, Elm_Win_Type type, int i);
+  Settings(const std::string &name, Elm_Win_Type type, int i, Main *mainApp);
+  Settings(Evasxx::Object &parent, const std::string &name, Elm_Win_Type type, int i, Main *mainApp);
   
 private:
   Settings (); // forbid standard constructor
@@ -31,6 +34,7 @@ private:
   Elmxx::Entry *mEtParameter;
   Elmxx::Check *mCkTerminal;
   Elmxx::Check *mCkDebugger;
+  Main *mMainApp;
 };
 
 #endif // SETTINGS_H

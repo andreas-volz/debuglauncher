@@ -13,7 +13,7 @@
 using namespace std;
 
 XMLLoader::XMLLoader() :
-  mLogger("dbg_launcher")
+  mLogger("DebugLauncher.XMLLoader")
 {
 }
 

@@ -18,6 +18,7 @@ public:
   XMLLoader();
   ~XMLLoader();
 
+public:
   bool load(const std::string &file);
 
 protected:

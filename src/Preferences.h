@@ -15,6 +15,7 @@ public:
     terminal = false;
     debugger = false;
     mExePtr = NULL;
+    mPid = -1;
   }
 
   std::string name;
@@ -23,6 +24,7 @@ public:
   bool terminal;
   bool debugger;
   Ecorexx::Exe *mExePtr;
+  pid_t mPid;
 };
 
 class Preferences

@@ -3,21 +3,24 @@
 #endif
 
 #include "SettingsWindow.h"
+#include "Main.h"
 
 using namespace std;
 using namespace Eflxx;
 using namespace Elmxx;
 
-Settings::Settings(const std::string &name, Elm_Win_Type type, int i) :
+Settings::Settings(const std::string &name, Elm_Win_Type type, int i, Main *mainApp) :
   Window(name, type),
-  mNumber (i)
+  mNumber(i),
+  mMainApp(mainApp)
 {
   newWindow();
 }
 
-Settings::Settings(Evasxx::Object &parent, const std::string &name, Elm_Win_Type type, int i) :
+Settings::Settings(Evasxx::Object &parent, const std::string &name, Elm_Win_Type type, int i, Main *mainApp) :
   Window(parent, name, type),
-  mNumber (i)
+  mNumber (i),
+  mMainApp(mainApp)
 {
   newWindow();
 }
@@ -27,14 +30,14 @@ Settings::~Settings()
 
 }
 
-Settings* Settings::factory(int i)
+Settings* Settings::factory(int i, Main *mainApp)
 {
-  return new Settings("settings", ELM_WIN_BASIC, i);
+  return new Settings("settings", ELM_WIN_BASIC, i, mainApp);
 }
 
-Settings* Settings::factory(Evasxx::Object &parent, int i)
+Settings* Settings::factory(Evasxx::Object &parent, int i, Main *mainApp)
 {
-  return new Settings(parent, "settings", ELM_WIN_BASIC, i);
+  return new Settings(parent, "settings", ELM_WIN_BASIC, i, mainApp);
 }
 
 void Settings::newWindow()
@@ -177,5 +180,7 @@ void Settings::ok_bt(Evasxx::Object &obj, void *event_info)
   dbg_app.terminal = mCkTerminal->getState();
   dbg_app.debugger = mCkDebugger->getState();
 
-  destroy();
+  mMainApp->updateGUI();
+    
+  destroy(); // don't do anyting after! Object does suicide after!!!!
 }

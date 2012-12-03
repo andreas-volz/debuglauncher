@@ -16,6 +16,7 @@
 #include "Main.h"
 #include "searchFile.h"
 #include "Preferences.h"
+#include "Logger.h"
 
 using namespace std;
 using namespace Eflxx;
@@ -34,6 +35,7 @@ int main(int argc, char **argv)
 }
 
 Main::Main(int argc, char **argv) :
+  mLogger("DebugLauncher.Main"),
   mArgc(argc),
   mArgv(argv),
   elmApp(NULL)
@@ -47,15 +49,23 @@ Main::Main(int argc, char **argv) :
   preferences.init ();
 }
 
+Main::~Main()
+{
+}
+
 int Main::run()
 { 
-  elmApp = new Application(mArgc, mArgv);
+  elmApp = CountedPtr<Elmxx::Application>(new Application(mArgc, mArgv));
   Theme mytheme;
   Icon *icSettings = NULL;
   Button *btSettings = NULL;
   Button *bt = NULL;
   Check *ck = NULL; 
-    
+
+  delSlot = sigc::mem_fun(*this, &Main::delSignalHandler);
+  
+  mEcoreExeDelEvent = CountedPtr<Ecorexx::Event>(new Ecorexx::Event(ECORE_EXE_EVENT_DEL, delSlot));
+
   Preferences &preferences = Preferences::instance ();
 
   xmlLoader.load(getUserWorkDir() + ".dbg_launcher/applications.xml");
@@ -102,6 +112,7 @@ int Main::run()
     bt->setSizeHintWeight(EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
     bt->setSizeHintAlign(EVAS_HINT_FILL, EVAS_HINT_FILL);
     tb->pack(*bt, Rect(1, i, 1, 1));
+    mButtonList.push_back(bt);
     bt->show();
 
     ck = Check::factory(*win);
@@ -110,6 +121,7 @@ int Main::run()
     ck->setState(false);
     ck->setDisabled(true);
     ck->show();
+    mCheckList.push_back(ck);
     bt->getEventSignal("clicked")->connect(sigc::bind(sigc::mem_fun(this, &Main::run_process), ck, i));
 
     ++i;
@@ -122,11 +134,50 @@ int Main::run()
   return 0;
 }
 
+void Main::updateGUI()
+{
+  Preferences &preferences = Preferences::instance ();
+
+  unsigned int i = 0;
+  for (std::vector<DbgApplication>::iterator app_it = preferences.dbg_applications.begin(); app_it != preferences.dbg_applications.end(); ++app_it)
+  {
+    DbgApplication &dbg_app = *app_it;
+
+    mCheckList[i]->setState((dbg_app.mPid == -1)? false : true);
+    mButtonList[i]->setText(dbg_app.name);
+    
+    ++i;
+  }
+}
+
 void Main::quit()
 {
   xmlWriter.write(getUserWorkDir() + ".dbg_launcher/applications.xml");
   
   Elmxx::Application::exit();
+}
+
+bool Main::delSignalHandler(int type, void *event)
+{
+  Preferences &preferences = Preferences::instance ();
+  Ecore_Exe_Event_Del *delEvent = static_cast<Ecore_Exe_Event_Del*>(event);
+  
+  for (std::vector<DbgApplication>::iterator app_it = preferences.dbg_applications.begin(); app_it != preferences.dbg_applications.end(); ++app_it)
+  {
+    DbgApplication &dbg_app = *app_it;
+
+    if(dbg_app.mPid == delEvent->pid)
+    {
+      dbg_app.mPid = -1;
+      delete dbg_app.mExePtr;
+      dbg_app.mExePtr = NULL;
+    }
+  }
+
+  updateGUI();
+  
+  cout << "process exit" << endl;
+  return true;
 }
 
 void Main::my_win_del(Evasxx::Object &obj, void *event_info)
@@ -136,7 +187,7 @@ void Main::my_win_del(Evasxx::Object &obj, void *event_info)
 
 void Main::click_settings_bt(Evasxx::Object &obj, void *event_info, int i)
 {
-  mSettings = Settings::factory(i);
+  mSettings = Settings::factory(i, this);
 }
 
 void Main::run_process(Evasxx::Object &obj, void *event_info, Check *ck, int i)
@@ -147,25 +198,15 @@ void Main::run_process(Evasxx::Object &obj, void *event_info, Check *ck, int i)
   
   if (ck->getState())
   {
-    ck->setState(false);
-
     if (dbg_app.mExePtr)
     {
-      try
-      {
-        dbg_app.mExePtr->kill();
-      }
-      catch(Ecorexx::ProcessNotExistingException ex)
-      {
-        cerr << ex.what() << endl;
-      }
-      delete dbg_app.mExePtr;
+      LOG4CXX_TRACE(mLogger, "Try to kill process: " << dbg_app.command);
+      
+      dbg_app.mExePtr->kill();  
     }
   }
   else
   {
-    ck->setState(true);
-
     string exe_command;
 
     if (dbg_app.terminal)
@@ -182,6 +223,9 @@ void Main::run_process(Evasxx::Object &obj, void *event_info, Check *ck, int i)
     
     
     dbg_app.mExePtr = new Ecorexx::Exe(exe_command, NULL);    
+    dbg_app.mPid = dbg_app.mExePtr->getPid();
   }
+
+  updateGUI();
 }
 
