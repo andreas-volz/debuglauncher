@@ -68,10 +68,10 @@ int Main::run()
 
   Preferences &preferences = Preferences::instance ();
 
-  xmlLoader.load(getUserWorkDir() + ".dbg_launcher/applications.xml");
+  xmlLoader.load(getUserWorkDir() + ".debuglauncher/applications.xml");
 
   Window *win = Window::factory("table", ELM_WIN_BASIC);
-  win->setTitle("DbgLauncher");
+  win->setTitle("DebugLauncher");
   win->setAutoDel(true);
   win->getEventSignal("delete,request")->connect(sigc::mem_fun(this, &Main::my_win_del));
 
@@ -152,7 +152,8 @@ void Main::updateGUI()
 
 void Main::quit()
 {
-  xmlWriter.write(getUserWorkDir() + ".dbg_launcher/applications.xml");
+  //BUG: disabled, because defect
+  //xmlWriter.write(getUserWorkDir() + ".debuglauncher/applications.xml");
   
   Elmxx::Application::exit();
 }

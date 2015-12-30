@@ -9,6 +9,7 @@
 #include "Exceptions.h"
 
 /* to get home dir */
+#include <unistd.h>
 #include <sys/types.h>
 #include <pwd.h>
 
